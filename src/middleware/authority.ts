@@ -26,6 +26,7 @@ export class AuthorityMiddleware implements IMiddleware<Context, NextFunction> {
         // 校验token是否合法
         const user: any = await this.jwt.verify(token, secret)
         if (adminUsers.includes(user.username)) {
+          ctx.admin = { user }
           return await next()
         }
 

@@ -60,6 +60,7 @@ export class LoginService {
       nickname,
       roleId
     }
+    debugger
     // 使用用户一些基本信息生成 token
     const token = await this.jwt.sign(userInfo)
 

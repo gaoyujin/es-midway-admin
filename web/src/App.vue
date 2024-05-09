@@ -1,5 +1,5 @@
 <template>
-  <el-config-provider :locale="zhLocale">
+  <el-config-provider>
     <div :class="['app-container']">
       <router-view v-slot="{ Component }">
         <component :is="Component" />
@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import zhLocale from 'element-plus/lib/locale/lang/zh-cn'
+// import zhLocale from 'element-plus/lib/locale/lang/zh-cn'
 import { resize } from './utils/resize'
 onMounted(() => {
   resize()

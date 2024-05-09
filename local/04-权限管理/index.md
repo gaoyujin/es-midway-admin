@@ -1,8 +1,8 @@
 # es-midway-admin
 
-基于midwayjs搭建的一套基础后台管理系统(四)-权限管理
+基于 midwayjs 搭建的一套基础后台管理系统(四)-权限管理
 
-[github仓库地址](https://github.com/vangleer/es-midway-admin)
+[github 仓库地址](https://github.com/vangleer/es-midway-admin)
 
 ## 主要内容
 
@@ -16,22 +16,22 @@
 
 后端：
 
-  1. 将菜单权限生成树状结构，前端用于生成动态路由
-  2. 按钮或接口权限（后面统一叫接口权限）保存到缓存中，在authority中间件中token校验成功后判断当前用户是否拥有该接口权限
+1. 将菜单权限生成树状结构，前端用于生成动态路由
+2. 按钮或接口权限（后面统一叫接口权限）保存到缓存中，在 authority 中间件中 token 校验成功后判断当前用户是否拥有该接口权限
 
 前端：
 
-  1. 用户登录成功后，需要调用获取权限信息的接口（包含所有的接口权限，和路由/菜单信息）
-  2. 将数据保存到全局状态中，同时需要根据菜单权限生成路由
-  3. 封装接口权限校验函数 hasPermission 用于判断当前登录用户是否拥有该权限（也可已是否显示按钮），也可以基于 hasPermission 封装vue指令校验
+1. 用户登录成功后，需要调用获取权限信息的接口（包含所有的接口权限，和路由/菜单信息）
+2. 将数据保存到全局状态中，同时需要根据菜单权限生成路由
+3. 封装接口权限校验函数 hasPermission 用于判断当前登录用户是否拥有该权限（也可已是否显示按钮），也可以基于 hasPermission 封装 vue 指令校验
 
 ## 后端：表结构
 
-- 为了便于理解这里只会涉及3个表User、Role、Menu，权限比较复杂的可以自行扩展
+- 为了便于理解这里只会涉及 3 个表 User、Role、Menu，权限比较复杂的可以自行扩展
 
 ### User（用户） 表
 
-- 用户可以添加多个角色，roleId 为字符串，使用逗号分割角色id
+- 用户可以添加多个角色，roleId 为字符串，使用逗号分割角色 id
 
 ```typescript
 // src/entity/user.ts
@@ -58,7 +58,7 @@ export class User extends BaseEntity {
 
 ### Role（角色）表
 
-- 一个角色可以添加多个权限，使用逗号分割权限id
+- 一个角色可以添加多个权限，使用逗号分割权限 id
 
 ```typescript
 // src/entity/role.ts
@@ -80,9 +80,9 @@ export class Role extends BaseEntity {
 
 ### Menu（菜单权限） 表
 
-- Menu有3种类型（0表示目录 1表示菜单 2表示接口）
-- 菜单需要菜单的路由地址 router和对应的视图地址 viewPath字段
-- 接口类型需要权限标识perms字段，格式可自行选择，我们这里存放接口的地址
+- Menu 有 3 种类型（0 表示目录 1 表示菜单 2 表示接口）
+- 菜单需要菜单的路由地址 router 和对应的视图地址 viewPath 字段
+- 接口类型需要权限标识 perms 字段，格式可自行选择，我们这里存放接口的地址
 
 ```typescript
 // src/entity/menu.ts
@@ -119,14 +119,13 @@ export class Menu extends BaseEntity {
   @Column({ comment: '权限标识', nullable: true })
   perms: string
 }
-
 ```
 
 ## 后端：菜单权限接口实现
 
 登录相关逻辑在前面的文章中有讲到，就不在这里讲解了
 
-### Controller层添加接口 getUserRole
+### Controller 层添加接口 getUserRole
 
 ```typescript
 // src/controller/user.ts
@@ -151,7 +150,7 @@ export class UserController extends BaseController {
 }
 ```
 
-### 相关service方法实现
+### 相关 service 方法实现
 
 ```typescript
 // src/service/user.ts
@@ -199,10 +198,14 @@ export class UserService extends BaseService<User> {
     const menuList = await this.menuService.list({ id: In(menuIds) })
 
     // 菜单权限：将列表转换为树状结构，（转换前过滤调接口权限）
-    const menus = await this.menuService.list2tree(menuList.filter(item => item.type !== 2))
+    const menus = await this.menuService.list2tree(
+      menuList.filter(item => item.type !== 2)
+    )
 
     // 接口权限：保存到缓存中
-    const perms = menuList.filter(item => item.type === 2).map(item => item.perms)
+    const perms = menuList
+      .filter(item => item.type === 2)
+      .map(item => item.perms)
     await this.cache.set(`es:admin:perms:${userId}`, JSON.stringify(perms))
 
     return { ...res, roleList, menus, perms }
@@ -214,11 +217,11 @@ export class UserService extends BaseService<User> {
 
 步骤解析：
 
-1. 用户调用接口会先到全局校验中间件中，解析token得到用户的基本信息保存到当前请求的上下文中 `参考 src/middleware/authority.ts`
-2. 拿到上下文的用户id获取用户角色信息
+1. 用户调用接口会先到全局校验中间件中，解析 token 得到用户的基本信息保存到当前请求的上下文中 `参考 src/middleware/authority.ts`
+2. 拿到上下文的用户 id 获取用户角色信息
 3. 根据角色信息获取所有的菜单权限
 4. 将菜单权限生成树状结构，前端用于生成动态路由
-5. 接口权限保存到缓存中，在token校验成功后判断当前用户是否拥有该接口权限
+5. 接口权限保存到缓存中，在 token 校验成功后判断当前用户是否拥有该接口权限
 
 ```typescript
 // src/middleware/authority.ts
@@ -255,11 +258,14 @@ export class AuthorityMiddleware implements IMiddleware<Context, NextFunction> {
         // 校验token是否合法
         const user: any = await this.jwt.verify(token, secret)
         if (adminUsers.includes(user.username)) {
+          ctx.admin = { user }
           return await next()
         }
 
         // 从缓存中获取当前用户接口权限信息
-        const perms: string[] = await this.cache.get(`es:admin:perms:${user.id}`)
+        const perms: string[] = await this.cache.get(
+          `es:admin:perms:${user.id}`
+        )
         // 判断是否存在当前接口权限
         if (perms && !perms.includes(url)) {
           throw new CustomHttpError('无权限访问~', 1001)
@@ -273,13 +279,11 @@ export class AuthorityMiddleware implements IMiddleware<Context, NextFunction> {
     }
   }
 }
-
 ```
-
 
 ## 前端：根据菜单权限生成动态路由
 
-先看看后端返回的数据结构，生成动态路由会使用到返回的menus
+先看看后端返回的数据结构，生成动态路由会使用到返回的 menus
 
 ```json
 {
@@ -346,15 +350,11 @@ export class AuthorityMiddleware implements IMiddleware<Context, NextFunction> {
         ]
       }
     ],
-    "perms": [
-      "/system/user/add",
-      "/system/user/update"
-    ]
+    "perms": ["/system/user/add", "/system/user/update"]
   },
   "message": "success"
 }
 ```
-
 
 ### userStore
 
@@ -363,7 +363,13 @@ export class AuthorityMiddleware implements IMiddleware<Context, NextFunction> {
 ```typescript
 // src/store/user.ts
 import { defineStore } from 'pinia'
-import { removeToken, setToken, setStorage, getStorage, removeStorage } from '@/utils'
+import {
+  removeToken,
+  setToken,
+  setStorage,
+  getStorage,
+  removeStorage
+} from '@/utils'
 import router from '@/router'
 type UserState = {
   token: string
@@ -373,7 +379,7 @@ type UserState = {
 }
 
 export const useUserStore = defineStore('user', {
-  state: (): UserState => (getStorage('userinfo') || {}),
+  state: (): UserState => getStorage('userinfo') || {},
   actions: {
     async saveUser({ token, username }: UserState) {
       this.username = username
@@ -427,12 +433,11 @@ export const useAuthStore = defineStore('auth', {
     }
   }
 })
-
 ```
 
 ### 定义路由
 
-- 前端得到数据后保存到store中，在遍历menus动态添加路由
+- 前端得到数据后保存到 store 中，在遍历 menus 动态添加路由
 
 ```typescript
 // src/router/index.ts
@@ -545,7 +550,6 @@ function mapRoutes(menus: any[] = []): RouteRecordRaw[] {
 }
 
 export default router
-
 ```
 
 解析：
@@ -567,17 +571,17 @@ const router = createRouter({
 ```
 
 - 用户访问页面后会进入到路由守卫中，如果访问的是登录页面清除用户缓存放行
-- 没有token重定向到login页面，访问白名单放行
-- 如果auth状态中没有授权路由信息，调用addRoutes函数
+- 没有 token 重定向到 login 页面，访问白名单放行
+- 如果 auth 状态中没有授权路由信息，调用 addRoutes 函数
 
-    1. 获取用户权限信息
-    2. 使用mapRoutes函数将menus生成转换伟路由项
-    3. 使用router.addRoute将动态路由和共享路由添加到路由列表
-    4. 添加404页面
+  1. 获取用户权限信息
+  2. 使用 mapRoutes 函数将 menus 生成转换伟路由项
+  3. 使用 router.addRoute 将动态路由和共享路由添加到路由列表
+  4. 添加 404 页面
 
 ## 前端：按钮级别权限控制
 
-有了前面的铺垫，按钮级别控制就简单多了，前面已经将用户所有接口权限存储到authStore的perms里了，直接用其封装校验函数和指令即可
+有了前面的铺垫，按钮级别控制就简单多了，前面已经将用户所有接口权限存储到 authStore 的 perms 里了，直接用其封装校验函数和指令即可
 
 ```typescript
 // src/utils/permission.ts
@@ -619,7 +623,9 @@ app.directive('perm', permission)
 
 ```html
 <el-button v-perm="'/system/user/add'" type="primary">新增</el-button>
-<el-button v-if="hasPermission('/system/user/update')" type="primary">编辑</el-button>
+<el-button v-if="hasPermission('/system/user/update')" type="primary"
+  >编辑</el-button
+>
 ```
 
 权限值也可以使用数值(权限点)或其它方式，这里直接使用接口地址主要是便于理解
@@ -628,8 +634,6 @@ app.directive('perm', permission)
 
 还有一种方式是返回菜单列表的时候将菜单页面的权限放到里面，每次切换路由得到当前的页面的权限列表，再使用判断即可。
 
-
 由于项目还在开发中，目前就实现了这些功能，后面会不断完善，也会出一些相关文章。
 
 done...
-
